@@ -5,23 +5,41 @@ import Users from "../models/Users.js";
 
 
 export const appointMentByDate = async (req, res, next) => {
-    const { id, isAdmin, isDoctor } = req.user;
     try {
-        if(isDoctor){
-            const appointmentDate = await appointMentSchema.find({isDoctor:id, doctor_id: id});
-            res.status(200).json(appointmentDate);
-        }
-        if (isAdmin) {
-            const appointmentDate = await appointMentSchema.find({ appointmantDate: req.body.date })
-            res.status(200).json(appointmentDate);
-        } else {
-            const appointmentDate = await appointMentSchema.find({ appointmantDate: req.body.date, user_id: id })
-            res.status(200).json(appointmentDate);
-        }
+      const { id, isAdmin, isDoctor } = req.user;
+      const { date } = req.body;
+
+      if (!date) {
+        throw new AppError(400, 'Appointment date is required');
+      }
+
+      let appointments;
+
+      if (isDoctor) {
+        appointments = await appointMentSchema.find({
+          isDoctor: id,
+          doctor_id: id
+        }).populate('user_id', 'username email');
+      } else if (isAdmin) {
+        appointments = await appointMentSchema.find({
+          appointmantDate: date
+        }).populate(['user_id', 'doctor_id']);
+      } else {
+        appointments = await appointMentSchema.find({
+          appointmantDate: date,
+          user_id: id
+        }).populate('doctor_id', 'username email');
+      }
+
+      logger.info(`Appointments retrieved for date: ${date}`);
+      res.status(200).json({
+        status: 'success',
+        data: appointments
+      });
     } catch (err) {
-        next(err);
+      next(err);
     }
-}
+};
 export const AddServices = async (req, res, next) => {
     const serviceData = new OurServices(req.body);
     try {

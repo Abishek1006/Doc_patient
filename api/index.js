@@ -7,26 +7,33 @@ import dotenv from 'dotenv';
 import doctorRoutes from './routes/doctor.js'
 import cookieParser from 'cookie-parser';
 
+// Load environment variables first
+dotenv.config();
+
+// Set strictQuery option to handle deprecation warning
+mongoose.set('strictQuery', false);
+
 const app = express();
 app.use(cors());
 const port = 5000;
 
-mongoose.connection.on("disconnected", () =>{console.log("Disconnected")})
+mongoose.connection.on("disconnected", () => {console.log("Disconnected")})
 
-const connect = async () =>{
-    try{
-        mongoose.connect(process.env.MONGO)
-        console.log("Conntected to Mongodb")
-    }catch(err){
+const connect = async () => {
+    try {
+        await mongoose.connect(process.env.MONGO);
+        console.log("Connected to MongoDB")
+    } catch(err) {
         console.log(err)
     }
 }
+
 app.use(cookieParser())
-dotenv.config();
 app.use(express.json())
 app.use(bodyParser.json());
 app.use(express.static('doctors'));
 app.use(fileUpload());
+app.use('/', doctorRoutes)
 app.use('/', doctorRoutes)
 app.get('/', (req, res) => {
     res.send("hello it/s running")
